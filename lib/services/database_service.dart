@@ -8,43 +8,44 @@ class DatabaseService {
 
   final String _notesTableName = "notes";
   final String _notesIdColumnName = "id";
+  final String _notesTitleColumnName = "title";
   final String _notesContentColumnName = "content";
   final String _notesStatusColumnName = "status";
 
   DatabaseService._constructor();
 
   Future<Database> get database async {
-    if(_db != null) return _db!;
+    if (_db != null) return _db!;
     _db = await getDatabase();
     return _db!;
   }
 
-  Future<Database> getDatabase()  async {
+  Future<Database> getDatabase() async {
     final databaseDirPath = await getDatabasesPath();
     final databasePath = join(databaseDirPath, "master_db.db");
-    final database = await openDatabase(
-      databasePath,
-      version: 1,
-      onCreate: (db, version){
-        db.execute(''' 
+    final database =
+        await openDatabase(databasePath, version: 1, onCreate: (db, version) {
+      db.execute('''
           CREATE TABLE $_notesTableName (
             $_notesIdColumnName INTEGER PRIMARY KEY,
+            $_notesTitleColumnName TEXT NOT NULL,
             $_notesContentColumnName TEXT NOT NULL,
             $_notesStatusColumnName INTEGER NOT NULL
           )
         ''');
-      }
-    );
+    });
     return database;
   }
 
   void addNotes(
+    String title,
     String content,
   ) async {
     final db = await database;
     await db.insert(
       _notesTableName,
       {
+        _notesTitleColumnName: title,
         _notesContentColumnName: content,
         _notesStatusColumnName: 0,
       },
@@ -59,11 +60,12 @@ class DatabaseService {
     );
     List<Note> notes = data
         .map(
-            (e) =>Note(
-                id: e["id"] as int,
-                status: e["status"] as int,
-                content: e["content"] as String,
-            ),
+          (e) => Note(
+            id: e["id"] as int,
+            status: e["status"] as int,
+            title: e["title"] as String,
+            content: e["content"] as String,
+          ),
         )
         .toList();
     return notes;
@@ -75,19 +77,29 @@ class DatabaseService {
     await deleteDatabase(databasePath);
   }
 
-
   void updateNotes(
-      int id,
-      String content,
-      ) async {
+    int id,
+    String title,
+    String content,
+  ) async {
     final db = await database;
     await db.update(
       _notesTableName,
       {
+        _notesTitleColumnName: title,
         _notesContentColumnName: content,
         _notesStatusColumnName: 0,
       },
       where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteNoteById(int id) async {
+    final db = await database;
+    await db.delete(
+      _notesTableName,
+      where: '$_notesIdColumnName = ?',
       whereArgs: [id],
     );
   }
