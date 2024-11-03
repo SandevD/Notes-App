@@ -14,13 +14,13 @@ class _HomePageState extends State<HomePage> {
   final DatabaseService _databaseService = DatabaseService.instance;
 
   final List<Color> _noteColors = [
-    Colors.lightBlueAccent,
-    Colors.lightGreenAccent,
-    Colors.amberAccent,
-    Colors.pinkAccent,
-    Colors.orangeAccent,
-    Colors.purpleAccent,
-    Colors.tealAccent,
+    Colors.lightBlueAccent.withOpacity(0.9),
+    Colors.lightGreenAccent.withOpacity(0.9),
+    Colors.amberAccent.withOpacity(0.9),
+    Colors.pinkAccent.withOpacity(0.9),
+    Colors.orangeAccent.withOpacity(0.9),
+    Colors.purpleAccent.withOpacity(0.9),
+    Colors.tealAccent.withOpacity(0.9),
   ];
 
   final List<Color> _recentColors = []; // Track recently used colors
@@ -225,18 +225,25 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  note.title,
+                  note.title.length > 10 ? '${note.title.substring(0, 10)}...' : note.title,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    _confirmDelete(context, note.id);
-                  },
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white, // White background
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(100.0), // Rounded corners
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      _confirmDelete(context, note.id);
+                    },
+                  ),
                 ),
               ],
             ),
