@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:my_simple_note/models/note.dart';
 import 'package:my_simple_note/services/database_service.dart';
@@ -12,7 +13,40 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final DatabaseService _databaseService = DatabaseService.instance;
 
+  final List<Color> _noteColors = [
+    Colors.lightBlueAccent,
+    Colors.lightGreenAccent,
+    Colors.amberAccent,
+    Colors.pinkAccent,
+    Colors.orangeAccent,
+    Colors.purpleAccent,
+    Colors.tealAccent,
+  ];
+
+  final List<Color> _recentColors = []; // Track recently used colors
+
   String? _note;
+
+  Color _getRandomColor() {
+    List<Color> availableColors = _noteColors
+        .where((color) => !_recentColors.contains(color))
+        .toList();
+
+    if (availableColors.isEmpty) {
+      _recentColors.clear();
+      availableColors = List.from(_noteColors);
+    }
+
+    final color = availableColors[Random().nextInt(availableColors.length)];
+    _recentColors.add(color);
+
+    if (_recentColors.length > 3) {
+      _recentColors.removeAt(0); // Keep only the last 3 used colors
+    }
+
+    return color;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +63,7 @@ class _HomePageState extends State<HomePage> {
             padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
             child: CircleAvatar(
               backgroundImage: NetworkImage(
-                  'https://cdn-icons-png.flaticon.com/512/3209/3209265.png'), // Replace with a proper avatar URL
+                  'https://cdn-icons-png.flaticon.com/512/3209/3209265.png'),
             ),
           ),
         ],
@@ -42,7 +76,7 @@ class _HomePageState extends State<HomePage> {
   Widget _addNoteButton() {
     return FloatingActionButton(
       onPressed: () {
-        _showAddNoteModal(context); // Triggering the modal on button press
+        _showAddNoteModal(context);
       },
       backgroundColor: Colors.white,
       child: const Icon(Icons.add),
@@ -50,7 +84,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showAddNoteModal(BuildContext context) {
-    TextEditingController noteController = TextEditingController();
+    TextEditingController titleController = TextEditingController();
+    TextEditingController contentController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -60,18 +95,18 @@ class _HomePageState extends State<HomePage> {
         return AnimatedPadding(
           duration: const Duration(milliseconds: 300),
           padding: MediaQuery.of(context).viewInsets,
-          child: _buildAddNoteModal(context, noteController),
+          child: _buildAddNoteModal(context, titleController, contentController),
         );
       },
     );
   }
 
   Widget _buildAddNoteModal(
-      BuildContext context, TextEditingController noteController) {
+      BuildContext context, TextEditingController titleController, TextEditingController contentController) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        color: Colors.white, // White background for the modal
+        color: Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -85,43 +120,56 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black, // Black text for contrast on white
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 20),
           TextField(
-            controller: noteController,
+            controller: titleController,
             decoration: const InputDecoration(
-              labelText: 'Note Content',
-              labelStyle: TextStyle(color: Colors.black), // Black label color
+              labelText: 'Note Title',
+              labelStyle: TextStyle(color: Colors.black),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.black), // Black underline
+                borderSide: BorderSide(color: Colors.black),
               ),
               focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(
-                    color: Colors.blue), // Blue underline when focused
+                borderSide: BorderSide(color: Colors.blue),
               ),
             ),
-            style: const TextStyle(color: Colors.black), // Black text color
+            style: const TextStyle(color: Colors.black),
+          ),
+          TextField(
+            controller: contentController,
+            decoration: const InputDecoration(
+              labelText: 'Note Content',
+              labelStyle: TextStyle(color: Colors.black),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.black),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue),
+              ),
+            ),
+            style: const TextStyle(color: Colors.black),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
-              String noteContent = noteController.text.trim();
+              String noteTitle = titleController.text.trim();
+              String noteContent = contentController.text.trim();
               if (noteContent.isNotEmpty) {
                 setState(() {
-                  // Add the new note to the database
-                  _databaseService.addNotes(noteContent);
+                  _databaseService.addNotes(noteTitle, noteContent);
                 });
                 Navigator.of(context).pop();
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue, // Button color
+              backgroundColor: Colors.blue,
             ),
             child: const Text(
               'Done',
-              style: TextStyle(color: Colors.white), // White text for contrast
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -131,7 +179,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _noteList() {
     return FutureBuilder(
-      future: _databaseService.getNotes(), // Replace with your actual method
+      future: _databaseService.getNotes(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -158,25 +206,39 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _noteCard(Note note, BuildContext context) {
+    final randomColor = _getRandomColor();
+
     return GestureDetector(
       onTap: () {
         _showEditModal(context, note);
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.lightBlueAccent,
+          color: randomColor,
           borderRadius: BorderRadius.circular(15),
         ),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              note.content,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  note.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    _confirmDelete(context, note.id);
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -193,11 +255,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _confirmDelete(BuildContext context, int noteId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Note"),
+          content: const Text("Are you sure you want to delete this note?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _databaseService.deleteNoteById(noteId);
+                setState(() {});
+                Navigator.of(context).pop();
+              },
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showEditModal(BuildContext context, Note note) {
     TextEditingController titleController =
-        TextEditingController(text: note.content);
+    TextEditingController(text: note.title);
     TextEditingController contentController =
-        TextEditingController(text: note.content);
+    TextEditingController(text: note.content);
 
     showModalBottomSheet(
       context: context,
@@ -231,7 +319,6 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Title of the modal
           const Text(
             'Edit Note',
             style: TextStyle(
@@ -239,45 +326,38 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 20), // Spacer
-          // Title input field
+          const SizedBox(height: 20),
           TextField(
             controller: titleController,
             decoration: const InputDecoration(labelText: 'Edit Title'),
           ),
           const SizedBox(height: 10),
-          // Content input field
           TextField(
             controller: contentController,
             maxLines: 5,
             decoration: const InputDecoration(labelText: 'Edit Content'),
           ),
           const SizedBox(height: 20),
-          // Save buttonRow(
           Row(
-              mainAxisAlignment: MainAxisAlignment
-                  .spaceEvenly, // Centers the buttons with space between
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // Update note and pop modal
-                    // Update logic here
+                    String titleContent = titleController.text.trim();
                     String noteContent = contentController.text.trim();
                     if (noteContent.isNotEmpty) {
                       setState(() {
-                        // Add the new note to the database
-                        _databaseService.updateNotes(note.id, noteContent);
+                        _databaseService.updateNotes(note.id, titleContent, noteContent);
                       });
                       Navigator.of(context).pop();
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // Button color
+                    backgroundColor: Colors.blue,
                   ),
                   child: const Text(
                     'Update',
-                    style: TextStyle(
-                        color: Colors.white), // White text for contrast
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ]),
