@@ -17,10 +17,10 @@ class _HomePageState extends State<HomePage> {
     Colors.lightBlueAccent.withOpacity(0.9),
     Colors.lightGreenAccent.withOpacity(0.9),
     Colors.amberAccent.withOpacity(0.9),
-    Colors.pinkAccent.withOpacity(0.9),
-    Colors.orangeAccent.withOpacity(0.9),
-    Colors.purpleAccent.withOpacity(0.9),
-    Colors.tealAccent.withOpacity(0.9),
+    const Color.fromARGB(255, 255, 129, 171).withOpacity(0.9),
+    const Color.fromARGB(255, 248, 179, 90).withOpacity(0.9),
+    const Color.fromARGB(255, 225, 126, 243).withOpacity(0.9),
+    const Color.fromARGB(255, 137, 255, 227).withOpacity(0.9),
   ];
 
   final List<Color> _recentColors = []; // Track recently used colors
@@ -28,9 +28,8 @@ class _HomePageState extends State<HomePage> {
   String? _note;
 
   Color _getRandomColor() {
-    List<Color> availableColors = _noteColors
-        .where((color) => !_recentColors.contains(color))
-        .toList();
+    List<Color> availableColors =
+        _noteColors.where((color) => !_recentColors.contains(color)).toList();
 
     if (availableColors.isEmpty) {
       _recentColors.clear();
@@ -40,7 +39,7 @@ class _HomePageState extends State<HomePage> {
     final color = availableColors[Random().nextInt(availableColors.length)];
     _recentColors.add(color);
 
-    if (_recentColors.length > 3) {
+    if (_recentColors.length > 5) {
       _recentColors.removeAt(0); // Keep only the last 3 used colors
     }
 
@@ -95,14 +94,17 @@ class _HomePageState extends State<HomePage> {
         return AnimatedPadding(
           duration: const Duration(milliseconds: 300),
           padding: MediaQuery.of(context).viewInsets,
-          child: _buildAddNoteModal(context, titleController, contentController),
+          child:
+              _buildAddNoteModal(context, titleController, contentController),
         );
       },
     );
   }
 
   Widget _buildAddNoteModal(
-      BuildContext context, TextEditingController titleController, TextEditingController contentController) {
+      BuildContext context,
+      TextEditingController titleController,
+      TextEditingController contentController) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -192,8 +194,8 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
+            crossAxisSpacing: 5,
+            mainAxisSpacing: 5,
           ),
           itemCount: snapshot.data?.length ?? 0,
           itemBuilder: (context, index) {
@@ -212,6 +214,9 @@ class _HomePageState extends State<HomePage> {
       onTap: () {
         _showEditModal(context, note);
       },
+      onLongPress: () {
+        _confirmDelete(context, note.id);
+      },
       child: Container(
         decoration: BoxDecoration(
           color: randomColor,
@@ -225,26 +230,35 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  note.title.length > 10 ? '${note.title.substring(0, 10)}...' : note.title,
+                  note.title.length > 10
+                      ? '${note.title.substring(0, 10)}...'
+                      : note.title,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white, // White background
-                    shape: BoxShape.rectangle,
-                    borderRadius: BorderRadius.circular(100.0), // Rounded corners
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      _confirmDelete(context, note.id);
-                    },
-                  ),
-                ),
+                // Container(
+                //   decoration: BoxDecoration(
+                //     color: Colors.white, // White background
+                //     shape: BoxShape.rectangle,
+                //     borderRadius:
+                //         BorderRadius.circular(50.0), // Reduced rounded corners
+                //   ),
+                //   child: IconButton(
+                //     icon: const Icon(Icons.delete, color: Colors.red),
+                //     constraints: const BoxConstraints(
+                //       minWidth: 10,
+                //       minHeight: 10,
+                //     ), // Set smaller minimum width and height
+                //     padding:
+                //         const EdgeInsets.all(4), // Add padding to reduce size further
+                //     onPressed: () {
+                //       _confirmDelete(context, note.id);
+                //     },
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: 8),
@@ -290,9 +304,9 @@ class _HomePageState extends State<HomePage> {
 
   void _showEditModal(BuildContext context, Note note) {
     TextEditingController titleController =
-    TextEditingController(text: note.title);
+        TextEditingController(text: note.title);
     TextEditingController contentController =
-    TextEditingController(text: note.content);
+        TextEditingController(text: note.content);
 
     showModalBottomSheet(
       context: context,
@@ -345,29 +359,28 @@ class _HomePageState extends State<HomePage> {
             decoration: const InputDecoration(labelText: 'Edit Content'),
           ),
           const SizedBox(height: 20),
-          Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    String titleContent = titleController.text.trim();
-                    String noteContent = contentController.text.trim();
-                    if (noteContent.isNotEmpty) {
-                      setState(() {
-                        _databaseService.updateNotes(note.id, titleContent, noteContent);
-                      });
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: const Text(
-                    'Update',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            ElevatedButton(
+              onPressed: () {
+                String titleContent = titleController.text.trim();
+                String noteContent = contentController.text.trim();
+                if (noteContent.isNotEmpty) {
+                  setState(() {
+                    _databaseService.updateNotes(
+                        note.id, titleContent, noteContent);
+                  });
+                  Navigator.of(context).pop();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+              ),
+              child: const Text(
+                'Update',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ]),
         ],
       ),
     );
