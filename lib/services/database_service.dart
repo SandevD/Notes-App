@@ -25,19 +25,61 @@ class DatabaseService {
   Future<Database> getDatabase() async {
     final databaseDirPath = await getDatabasesPath();
     final databasePath = join(databaseDirPath, "master_db.db");
-    final database =
-        await openDatabase(databasePath, version: 1, onCreate: (db, version) {
-      db.execute('''
-          CREATE TABLE $_notesTableName (
-            $_notesIdColumnName INTEGER PRIMARY KEY,
-            $_notesTitleColumnName TEXT NOT NULL,
-            $_notesContentColumnName TEXT NOT NULL,
-            $_notesStatusColumnName INTEGER NOT NULL,
-            $_createdAtColumnName TEXT NOT NULL,
-            $_updatedAtColumnName TEXT NOT NULL
-          )
-        ''');
-    });
+    final database = await openDatabase(
+      databasePath,
+      version: 1,
+      onCreate: (db, version) async {
+        // Create the table
+        await db.execute('''
+        CREATE TABLE $_notesTableName (
+          $_notesIdColumnName INTEGER PRIMARY KEY,
+          $_notesTitleColumnName TEXT NOT NULL,
+          $_notesContentColumnName TEXT NOT NULL,
+          $_notesStatusColumnName INTEGER NOT NULL,
+          $_createdAtColumnName TEXT NOT NULL,
+          $_updatedAtColumnName TEXT NOT NULL
+        )
+      ''');
+
+        // Insert initial dummy data
+        final timestamp = DateTime.now().toIso8601String();
+        await db.insert(_notesTableName, {
+          _notesTitleColumnName: "Shopping List",
+          _notesContentColumnName: "Milk, Bread, Eggs, Butter",
+          _notesStatusColumnName: 0,
+          _createdAtColumnName: timestamp,
+          _updatedAtColumnName: timestamp,
+        });
+        await db.insert(_notesTableName, {
+          _notesTitleColumnName: "Workout Plan",
+          _notesContentColumnName: "Push-ups, Squats, Running",
+          _notesStatusColumnName: 0,
+          _createdAtColumnName: timestamp,
+          _updatedAtColumnName: timestamp,
+        });
+        await db.insert(_notesTableName, {
+          _notesTitleColumnName: "Meeting Notes",
+          _notesContentColumnName: "Discuss Q4 targets and strategies",
+          _notesStatusColumnName: 0,
+          _createdAtColumnName: timestamp,
+          _updatedAtColumnName: timestamp,
+        });
+        await db.insert(_notesTableName, {
+          _notesTitleColumnName: "Books to Read",
+          _notesContentColumnName: "Atomic Habits, 1984, Brave New World",
+          _notesStatusColumnName: 0,
+          _createdAtColumnName: timestamp,
+          _updatedAtColumnName: timestamp,
+        });
+        await db.insert(_notesTableName, {
+          _notesTitleColumnName: "Recipe",
+          _notesContentColumnName: "2 cups of flour, 1 cup of sugar, ...",
+          _notesStatusColumnName: 0,
+          _createdAtColumnName: timestamp,
+          _updatedAtColumnName: timestamp,
+        });
+      },
+    );
     return database;
   }
 
@@ -63,7 +105,7 @@ class DatabaseService {
     final db = await database;
     final data = await db.query(
       _notesTableName,
-      orderBy: 'id DESC',
+      orderBy: '$_updatedAtColumnName DESC',
     );
     List<Note> notes = data
         .map(
