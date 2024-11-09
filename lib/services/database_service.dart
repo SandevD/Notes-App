@@ -11,6 +11,8 @@ class DatabaseService {
   final String _notesTitleColumnName = "title";
   final String _notesContentColumnName = "content";
   final String _notesStatusColumnName = "status";
+  final String _createdAtColumnName = "created_at";
+  final String _updatedAtColumnName = "updated_at";
 
   DatabaseService._constructor();
 
@@ -30,7 +32,9 @@ class DatabaseService {
             $_notesIdColumnName INTEGER PRIMARY KEY,
             $_notesTitleColumnName TEXT NOT NULL,
             $_notesContentColumnName TEXT NOT NULL,
-            $_notesStatusColumnName INTEGER NOT NULL
+            $_notesStatusColumnName INTEGER NOT NULL,
+            $_createdAtColumnName TEXT NOT NULL,
+            $_updatedAtColumnName TEXT NOT NULL
           )
         ''');
     });
@@ -42,12 +46,15 @@ class DatabaseService {
     String content,
   ) async {
     final db = await database;
+    final timestamp = DateTime.now().toIso8601String();
     await db.insert(
       _notesTableName,
       {
         _notesTitleColumnName: title,
         _notesContentColumnName: content,
         _notesStatusColumnName: 0,
+        _createdAtColumnName: timestamp,
+        _updatedAtColumnName: timestamp,
       },
     );
   }
@@ -65,6 +72,8 @@ class DatabaseService {
             status: e["status"] as int,
             title: e["title"] as String,
             content: e["content"] as String,
+            createdAt: e[_createdAtColumnName] as String,
+            updatedAt: e[_updatedAtColumnName] as String,
           ),
         )
         .toList();
@@ -83,12 +92,14 @@ class DatabaseService {
     String content,
   ) async {
     final db = await database;
+    final timestamp = DateTime.now().toIso8601String();
     await db.update(
       _notesTableName,
       {
         _notesTitleColumnName: title,
         _notesContentColumnName: content,
         _notesStatusColumnName: 0,
+        _updatedAtColumnName: timestamp,
       },
       where: 'id = ?',
       whereArgs: [id],
