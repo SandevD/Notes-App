@@ -53,9 +53,19 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        title: const Text(
-          'My Simple Note',
-          style: TextStyle(fontSize: 28, color: Colors.white),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'My Simple Note',
+              style: TextStyle(fontSize: 28, color: Colors.white),
+            ),
+            SizedBox(height: 4), // Space between title and guidelines
+            Text(
+              'Tap on a note to edit and long press to delete',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
         ),
         actions: const [
           Padding(
@@ -239,26 +249,6 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.black,
                   ),
                 ),
-                // Container(
-                //   decoration: BoxDecoration(
-                //     color: Colors.white, // White background
-                //     shape: BoxShape.rectangle,
-                //     borderRadius:
-                //         BorderRadius.circular(50.0), // Reduced rounded corners
-                //   ),
-                //   child: IconButton(
-                //     icon: const Icon(Icons.delete, color: Colors.red),
-                //     constraints: const BoxConstraints(
-                //       minWidth: 10,
-                //       minHeight: 10,
-                //     ), // Set smaller minimum width and height
-                //     padding:
-                //         const EdgeInsets.all(4), // Add padding to reduce size further
-                //     onPressed: () {
-                //       _confirmDelete(context, note.id);
-                //     },
-                //   ),
-                // ),
               ],
             ),
             const SizedBox(height: 8),
